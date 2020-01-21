@@ -28,12 +28,12 @@ def main():
     logger.addHandler(handler)
 
     # Set Up
+    logger.info("Args: " + str(args))
     home_input = gpiozero.Button(args.home_input)
     home_output = gpiozero.DigitalOutputDevice(args.home_output)
     extend_input = gpiozero.Button(args.extend_input)
     extend_output = gpiozero.DigitalOutputDevice(args.extend_output)
     wait = args.wait_time
-    logger.info("Args: " + str(args))
 
     position = get_position(home_input, extend_input)
     iteration = 0
@@ -54,14 +54,14 @@ def main():
             home_input.wait_for_active()
             logger.info("Got to HOME successfully.")
         elif position == "INVALID":
-            logger.info("Invalid state, both home and extend detected. Attempting to return to HOME.")
+            logger.error("Invalid state, both home and extend detected. Attempting to return to HOME.")
             extend_output.off()
             home_output.on()
             time.sleep(5)
             home_input.wait_for_active()
             logger.info("Got HOME signal.. attempting another iteration to see if things are normal again.")
         else:
-            logger.info("Unknown state, attempting return to HOME.")
+            logger.error("Unknown state, attempting return to HOME.")
             extend_output.off()
             home_output.on()
             home_input.wait_for_active()
