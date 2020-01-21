@@ -11,12 +11,10 @@ def main():
     parser = argparse.ArgumentParser(description='Run and test an actuator connected to a Pi.')
     parser.add_argument('home_input', metavar='home_input', type=int, nargs='?', default=5,
                         help='input pin for the home signal (BCM) [default 5]')
-    parser.add_argument('home_output', metavar='home_output', type=int, nargs='?', default=6,
-                        help='output pin for drive to home (BCM) [default 6]')
+    parser.add_argument('output', metavar='output', type=int, nargs='?', default=6,
+                        help='output pin for drive (BCM) [default 6]')
     parser.add_argument('extend_input', metavar='extend_input', type=int, nargs='?', default=13,
                         help='input pin for the extend signal (BCM) [default 13]')
-    parser.add_argument('extend_output', metavar='extend_output', type=int, nargs='?', default=19,
-                        help='output pin for drive to extend (BCM) [default 19]')
     parser.add_argument('wait_time', metavar='wait_time', type=int, nargs='?', default=2,
                         help='number of seconds to wait between iterations [default 2]')
     args = parser.parse_args()
@@ -29,10 +27,9 @@ def main():
 
     # Set Up
     logger.info("Args: " + str(args))
+    output = gpiozero.DigitalOutputDevice(args.home_output)
     home_input = gpiozero.Button(args.home_input)
-    home_output = gpiozero.DigitalOutputDevice(args.home_output)
     extend_input = gpiozero.Button(args.extend_input)
-    extend_output = gpiozero.DigitalOutputDevice(args.extend_output)
     wait = args.wait_time
 
     position = get_position(home_input, extend_input)
@@ -44,26 +41,22 @@ def main():
         position = get_position(home_input, extend_input)
         logger.info("Iteration " + str(iteration) + " starts at position " + position + ".")
         if position == "HOME":
-            home_output.off()
-            extend_output.on()
+            output.on()
             extend_input.wait_for_active()
             logger.info("Got to EXTEND successfully.")
         elif position == "EXTEND":
-            extend_output.off()
-            home_output.on()
+            output.off()
             home_input.wait_for_active()
             logger.info("Got to HOME successfully.")
         elif position == "INVALID":
             logger.error("Invalid state, both home and extend detected. Attempting to return to HOME.")
-            extend_output.off()
-            home_output.on()
+            output.off()
             time.sleep(5)
             home_input.wait_for_active()
             logger.info("Got HOME signal.. attempting another iteration to see if things are normal again.")
         else:
             logger.error("Unknown state, attempting return to HOME.")
-            extend_output.off()
-            home_output.on()
+            output.off()
             home_input.wait_for_active()
             logger.info("Got to HOME successfully.")
         time.sleep(wait)
