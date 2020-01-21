@@ -1,8 +1,9 @@
-import gpiozero
 import argparse
 import logging
-from logging.handlers import RotatingFileHandler
 import time
+from logging.handlers import RotatingFileHandler
+
+import gpiozero
 
 
 def main():
@@ -52,6 +53,13 @@ def main():
             home_output.on()
             home_input.wait_for_active()
             logger.info("Got to HOME successfully.")
+        elif position == "INVALID":
+            logger.info("Invalid state, both home and extend detected. Attempting to return to HOME.")
+            extend_output.off()
+            home_output.on()
+            time.sleep(5)
+            home_input.wait_for_active()
+            logger.info("Got HOME signal.. attempting another iteration to see if things are normal again.")
         else:
             logger.info("Unknown state, attempting return to HOME.")
             extend_output.off()
@@ -63,11 +71,13 @@ def main():
 
 
 def get_position(home_input, extend_input):
-    if home_input.value:  # We are already home
+    if home_input.value and extend_input.value:  # Both signals
+        position = "INVALID"
+    elif home_input.value:  # We are already home
         position = "HOME"
     elif extend_input.value:  # We are already extended
         position = "EXTEND"
-    else:
+    else:  # We're somewhere in between
         position = "TRANS"
     return position
 
